@@ -6,7 +6,13 @@ import uri
 import algorithm
 import sequtils
 import tables
+import times
+
 import hmac
+
+const
+  dateISO8601 = initTimeFormat "yyyyMMdd"
+  tightISO8601 = initTimeFormat "yyyyMMdd\'T\'HHmmss\'Z\'"
 
 type
   PathNormal* = enum Default, S3
@@ -128,6 +134,25 @@ proc canonicalRequest(meth: HttpMethod;
   result &= canonicalHeaders & "\n"
   result &= payload.hash(digest)
 
+proc credentialScope(region: string; service: string; date= ""): string =
+  ## combine region, service, and date into a scope
+  var d = date[.. len("YYYMMDD")]
+  if d == "":
+    d = getTime().utc.format(dateISO8601)
+  result = d / region.toLowerAscii / service.toLowerAscii / "aws4_request"
+
+proc stringToSign(hash: string; scope: string; date= ""; digest: SigningAlgo = SHA256): string =
+  ## combine signing algo, payload hash, credential scope, and date
+  var d = date
+  if d == "":
+    d = getTime().utc.format(tightISO8601)
+  assert d["YYYYMMDD".len] == 'T'
+  assert d["YYYYMMDDTHHMMSS".len] == 'Z'
+  result = $digest & "\n"
+  result &= d[.. ("YYYYMMDDTHHMMSSZ".len-1)] & "\n"
+  result &= scope & "\n"
+  result &= hash
+
 when isMainModule:
   import unittest
 
@@ -141,6 +166,7 @@ when isMainModule:
           "3 4": "5,🙄",
         }
         heads = @[("foo", "bar"), ("bif baz ", " boz     bop")]
+        c = credentialScope(region="us-west-1", service="iam", date="20200202")
         pay = "sigv4 test"
         e = {
           "AWS4-HMAC-SHA256": "474fff1f1f31f629b3a8932f1020ad2e73bf82e08c96d5998de39d66c8867836",
@@ -186,8 +212,8 @@ when isMainModule:
       let
         digest = SHA512
         normal = S3
-        canonical = canonicalRequest(HttpGet, "/foo/bar/..//bif/", q,
-                                     h, pay, S3, SHA512)
+        canonical = canonicalRequest(HttpGet, "/foo/bar/..//bif/",
+                                     q, h, pay, normal, digest)
       check canonical == """GET
 /foo/bar/..//bif/
 3%204=5%2C%F0%9F%99%84&B=2.0&a=1&c=
@@ -196,3 +222,22 @@ bif baz:boz bop
 foo:bar
 
 1dee518b5b2479e9fa502c05d4726a40bade650adbc391da8f196797df0f5da62e0659ad0e5a91e185c4b047d7a2d6324fae493a0abdae7aa10b09ec8303f6fe"""
+    test "credential scope":
+      let
+        date = "2020010155555555555"
+        scope = credentialScope(region="Us-West-1", service="IAM", date=date)
+      check scope == "20200101/us-west-1/iam/aws4_request"
+
+    test "string to sign":
+      let
+        digest = SHA512
+        date = "20200202T010101Z"
+        normal = S3
+        req = canonicalRequest(HttpGet, "/foo/bar/",
+                                     q, h, pay, normal, digest)
+        scope = credentialScope(region="us-west-1", service="S3", date=date)
+        sts = stringToSign(req.hash(digest), scope, date=date, digest=digest)
+      check sts == """AWS4-HMAC-SHA512
+20200202T010101Z
+20200202/us-west-1/s3/aws4_request
+d18bef886ba28e931de7cf40bca6b69d6b163eac7548e981f9578143cb445521bf54a4db0af7b141850a7ee4f246f1daab10eff9d2042c618a6737a09286fa9b"""
