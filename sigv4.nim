@@ -14,7 +14,7 @@ import nimcrypto/hmac as hmac
 
 const
   dateISO8601 = initTimeFormat "yyyyMMdd"
-  tightISO8601 = initTimeFormat "yyyyMMdd\'T\'HHmmss\'Z\'"
+  basicISO8601 = initTimeFormat "yyyyMMdd\'T\'HHmmss\'Z\'"
 
 type
   PathNormal* = enum
@@ -102,9 +102,9 @@ proc encodedHeaders(headers: HttpHeaders): EncodedHeaders =
     heads: seq[KeyValue]
   if headers == nil:
     return (signed: "", canonical: "")
-  for k, v in headers.table.pairs:
-    heads.add (key: k.strip.toLowerAscii,
-               val: v.map(trimAll).join(","))
+  for h in headers.table.pairs:
+    heads.add (key: h[0].strip.toLowerAscii,
+               val: h[1].map(trimAll).join(","))
   heads = heads.sortedByIt (it.key)
   for h in heads:
     if signed.len > 0:
@@ -168,7 +168,7 @@ proc stringToSign*(hash: string; scope: string; date= ""; digest: SigningAlgo = 
   ## combine signing algo, payload hash, credential scope, and date
   var d = date
   if d == "":
-    d = getTime().utc.format(tightISO8601)
+    d = getTime().utc.format(basicISO8601)
   assert d["YYYYMMDD".len] == 'T'
   assert d["YYYYMMDDTHHMMSS".len] == 'Z'
   result = $digest & "\n"
