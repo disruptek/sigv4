@@ -1,9 +1,11 @@
 # sigv4
 Amazon Web Services Signature Version 4 request signing in Nim
 
-The process is documented at https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html and most of the procedures in this code should be identifiable in the documentation.
+The process is documented at https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html and most of the procedures in this code should be identifiable in that documentation.
 
-## Example
+Additional documentation for this module may be generated via `nim doc sigv4.nim`, which will author an HTML document `sigv4.html`.
+
+## Usage
 
 ```nim
 import json
@@ -60,3 +62,7 @@ let
                                  service=service, tosign=sts, digest=digest)
 assert signature == "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7"
 ```
+
+## Details
+- This code requires nimcrypto https://github.com/cheatfate/nimcrypto (for SHA/HMAC).
+- Invoke with `nim c -r sigv4.nim` to run the tests, which (as above) use values from the AWS documentation.
