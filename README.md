@@ -1,7 +1,9 @@
 # sigv4
 Amazon Web Services Signature Version 4 request signing in Nim
 
-The process is documented at https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html and most of the procedures in this code should be identifiable in that documentation.
+_For AWS APIs in Nim, see https://github.com/disruptek/openapi_
+
+The request signing process is documented at https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html and most of the procedures in this code should be identifiable in that documentation.
 
 Additional documentation for this module may be generated via `nim doc sigv4.nim`, which will author an HTML document `sigv4.html`.
 
