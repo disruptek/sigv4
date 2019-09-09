@@ -24,6 +24,8 @@ type
     SHA256 = "AWS4-HMAC-SHA256"
     SHA512 = "AWS4-HMAC-SHA512"
   DigestTypes = md.MDigest[256] | md.MDigest[512]
+  EncodedHeaders* = tuple[signed: string; canonical: string]
+  KeyValue = tuple[key: string; val: string]
 
 proc encodedSegment(segment: string; passes: int): string =
   ## encode a segment 1+ times
@@ -58,15 +60,15 @@ proc encodedPath(uri: Uri; style: PathNormal): string =
   ## normalize and encode a URI's path
   result = uri.path.encodedPath(style)
 
-proc encodedQuery(input: openarray[tuple[key: string, val: string]]): string =
+proc encodedQuery(input: openarray[KeyValue]): string =
   ## encoded a series of key/value pairs as a query string
   let query = input.sortedByIt (it.key, it.val)
-  for key, value in query.items:
+  for q in query.items:
     if result.len > 0:
       result &= "&"
-    result &= encodeUrl(key, usePlus = false)
+    result &= encodeUrl(q.key, usePlus = false)
     result &= "="
-    result &= encodeUrl(value, usePlus = false)
+    result &= encodeUrl(q.val, usePlus = false)
 
 proc toQueryValue(node: JsonNode): string =
   assert node != nil
@@ -79,12 +81,12 @@ proc toQueryValue(node: JsonNode): string =
 
 proc encodedQuery(node: JsonNode): string =
   ## convert a JsonNode into an encoded query string
-  var query: seq[tuple[key: string, val: string]]
+  var query: seq[KeyValue]
   assert node != nil and node.kind == JObject
   if node == nil or node.kind != JObject:
     raise newException(ValueError, "pass me a JObject")
-  for k, v in node.pairs:
-    query.add (key: k, val: v.toQueryValue)
+  for q in node.pairs:
+    query.add (key: q.key, val: q.val.toQueryValue)
   result = encodedQuery(query)
 
 proc trimAll(s: string): string =
@@ -93,11 +95,11 @@ proc trimAll(s: string): string =
   while "  " in result:
     result = result.replace("  ", " ")
 
-proc encodedHeaders(headers: HttpHeaders): tuple[signed: string; canonical: string] =
+proc encodedHeaders(headers: HttpHeaders): EncodedHeaders =
   ## convert http headers into encoded header string
   var
     signed, canonical: string
-    heads: seq[tuple[key: string, val: string]]
+    heads: seq[KeyValue]
   if headers == nil:
     return (signed: "", canonical: "")
   for k, v in headers.table.pairs:
@@ -273,7 +275,7 @@ when isMainModule:
     test "encoded headers":
       var
         rheads = heads.reversed
-        r: tuple[signed: string; canonical: string]
+        r: EncodedHeaders
       r = (signed: "content-type;host;x-amz-date",
            canonical: "content-type:application/x-www-form-urlencoded; charset=utf-8\nhost:iam.amazonaws.com\nx-amz-date:20150830T123600Z\n")
       h = newHttpHeaders(heads)
