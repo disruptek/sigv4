@@ -148,13 +148,13 @@ proc canonicalRequest*(meth: HttpMethod;
   let
     httpmethod = $meth
     uri = url.parseUri
-    (signedHeaders, canonicalHeaders) = headers.encodedHeaders()
+    heads = headers.encodedHeaders()
 
   result = httpmethod.toUpperAscii & "\n"
   result &= uri.encodedPath(normalize) & "\n"
   result &= query.encodedQuery() & "\n"
-  result &= canonicalHeaders & "\n"
-  result &= signedHeaders & "\n"
+  result &= heads.canonical & "\n"
+  result &= heads.signed & "\n"
   result &= hash(payload, digest)
 
 proc credentialScope*(region: string; service: string; date= ""): string =
