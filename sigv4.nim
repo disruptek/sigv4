@@ -17,6 +17,7 @@ const
   basicISO8601 = initTimeFormat "yyyyMMdd\'T\'HHmmss\'Z\'"
 
 type
+  DateFormat = enum JustDate, DateAndTime
   PathNormal* = enum
     Default ## normalize paths to dereference `.` and `..` and de-dupe `/`
     S3 ## do not normalize paths, and perform one less pass of escaping
@@ -157,22 +158,42 @@ proc canonicalRequest*(meth: HttpMethod;
   result &= heads.signed & "\n"
   result &= hash(payload, digest)
 
+template assertDateLooksValid(d: string; format: DateFormat) =
+  case format:
+  of JustDate:
+    if d.len > "YYYYMMDD".len:
+      assert d["YYYYMMDD".len] == 'T'
+    else:
+      assert d.len == "YYYYMMDD".len
+  of DateAndTime:
+    if d.len > "YYYYMMDDTHHMMSS".len:
+      assert d["YYYYMMDDTHHMMSS".len] == 'Z'
+    else:
+      assert d.len == "YYYYMMDDTHHMMSSZ".len
+
+proc makeDateTime*(date: string = ""): string =
+  if date == "":
+    result = getTime().utc.format(basicISO8601)
+  else:
+    assertDateLooksValid(date, DateAndTime)
+    result = date[date.low .. ("YYYYMMDDTHHMMSSZ".len-1)]
+
+proc makeDate*(date: string = ""): string =
+  if date == "":
+    result = getTime().utc.format(dateISO8601)
+  else:
+    assertDateLooksValid(date, JustDate)
+    result = date[date.low .. ("YYYYMMDD".len-1)]
+
 proc credentialScope*(region: string; service: string; date= ""): string =
   ## combine region, service, and date into a scope
-  var d = date[.. (len("YYYYMMDD")-1)]
-  if d == "":
-    d = getTime().utc.format(dateISO8601)
+  let d = date.makeDate
   result = d / region.toLowerAscii / service.toLowerAscii / "aws4_request"
 
 proc stringToSign*(hash: string; scope: string; date= ""; digest: SigningAlgo = SHA256): string =
   ## combine signing algo, payload hash, credential scope, and date
-  var d = date
-  if d == "":
-    d = getTime().utc.format(basicISO8601)
-  assert d["YYYYMMDD".len] == 'T'
-  assert d["YYYYMMDDTHHMMSS".len] == 'Z'
   result = $digest & "\n"
-  result &= d[.. ("YYYYMMDDTHHMMSSZ".len-1)] & "\n"
+  result &= date.makeDateTime & "\n"
   result &= scope & "\n"
   result &= hash
 
@@ -180,7 +201,7 @@ proc deriveKey(H: typedesc; secret: string; date: string;
                 region: string; service: string): md.MDigest[H.bits] =
   ## compute the signing key for a subsequent signature
   var
-    digest = hmac.hmac(H, "AWS4" & secret, date[.. (len("YYYYMMDD")-1)])
+    digest = hmac.hmac(H, "AWS4" & secret, date.makeDate)
   digest = hmac.hmac(H, digest.data, region.toLowerAscii)
   digest = hmac.hmac(H, digest.data, service.toLowerAscii)
   digest = hmac.hmac(H, digest.data, "aws4_request")
@@ -315,7 +336,7 @@ content-type;host;x-amz-date
       check canonical.hash(digest) == y
     test "credential scope":
       let
-        d = "2020010155555555555"
+        d = "20200101T55555555555"
         scope = credentialScope(region="Us-West-1", service="IAM", date=d)
         skope = credentialScope(region=region, service=service, date=date)
       check scope == "20200101/us-west-1/iam/aws4_request"
