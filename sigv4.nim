@@ -90,6 +90,12 @@ proc encodedQuery(node: JsonNode): string =
     query.add (key: q.key, val: q.val.toQueryValue)
   result = encodedQuery(query)
 
+proc normalizeUrl*(url: string; query: JsonNode; normalize: PathNormal = Default): Uri =
+  result = url.parseUri
+  result.path = result.path.encodedPath(normalize)
+  result.query = query.encodedQuery
+  result.anchor = ""
+
 proc trimAll(s: string): string =
   ## remove surrounding whitespace and de-dupe internal spaces
   result = s.strip(leading=true, trailing=true)
