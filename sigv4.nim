@@ -111,7 +111,7 @@ proc encodedHeaders(headers: HttpHeaders): EncodedHeaders =
     return (signed: "", canonical: "")
   for h in headers.table.pairs:
     heads.add (key: h[0].strip.toLowerAscii,
-               val: h[1].map(trimAll).join(","))
+               val: seq[string](h[1]).map(trimAll).join(","))
   heads = heads.sortedByIt (it.key)
   for h in heads:
     if signed.len > 0:
