@@ -1,7 +1,7 @@
 # sigv4
 Amazon Web Services Signature Version 4 request signing in Nim
 
-_For AWS APIs in Nim, see https://github.com/disruptek/openapi_
+_For AWS APIs in Nim, see https://github.com/disruptek/atoz
 
 The request signing process is documented at https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html and most of the procedures in this code should be identifiable in that documentation.
 
