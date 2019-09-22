@@ -240,14 +240,14 @@ when isMainModule:
   suite "sig v4":
     setup:
       let
-        url = "https://iam.amazonaws.com/?Action=ListUsers&Version=2010-05-08"
-        secret = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY"
-        region = "us-east-1"
-        service = "iam"
-        digest = SHA256
-        normal = Default
+        url {.used.} = "https://iam.amazonaws.com/?Action=ListUsers&Version=2010-05-08"
+        secret {.used.} = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY"
+        region {.used.} = "us-east-1"
+        service {.used.} = "iam"
+        digest {.used.} = SHA256
+        normal {.used.} = Default
         date = "20150830T123600Z"
-        q = %* {
+        q {.used.} = %* {
           "Action": "ListUsers",
           "Version": "2010-05-08",
         }
@@ -256,13 +256,7 @@ when isMainModule:
           ("Content-Type", "application/x-www-form-urlencoded; charset=utf-8"),
           ("X-Amz-Date", date),
         ]
-        c = credentialScope(region=region, service=service, date=date)
-        pay = "sigv4 test"
-        e = {
-          "AWS4-HMAC-SHA256": "474fff1f1f31f629b3a8932f1020ad2e73bf82e08c96d5998de39d66c8867836",
-          "AWS4-HMAC-SHA512": "1dee518b5b2479e9fa502c05d4726a40bade650adbc391da8f196797df0f5da62e0659ad0e5a91e185c4b047d7a2d6324fae493a0abdae7aa10b09ec8303f6fe",
-        }.toTable
-      var h: HttpHeaders = newHttpHeaders(heads)
+      var h {.used.}: HttpHeaders = newHttpHeaders(heads)
     test "encoded segment":
       check "".encodedSegment(passes=1) == ""
       check "foo".encodedSegment(passes=1) == "foo"
@@ -310,6 +304,12 @@ when isMainModule:
       h = newHttpHeaders(rheads)
       check r == h.encodedHeaders()
     test "signing algos":
+      let
+        pay = "sigv4 test"
+        e = {
+          "AWS4-HMAC-SHA256": "474fff1f1f31f629b3a8932f1020ad2e73bf82e08c96d5998de39d66c8867836",
+          "AWS4-HMAC-SHA512": "1dee518b5b2479e9fa502c05d4726a40bade650adbc391da8f196797df0f5da62e0659ad0e5a91e185c4b047d7a2d6324fae493a0abdae7aa10b09ec8303f6fe",
+        }.toTable
       check pay.hash(SHA256) == e[$SHA256]
       check pay.hash(SHA512) == e[$SHA512]
       check "".hash(SHA256) == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
@@ -322,11 +322,6 @@ Content-Type: application/x-www-form-urlencoded; charset=utf-8
 X-Amz-Date: 20150830T123600Z
       """
       let
-        ch = newHttpHeaders(heads)
-        cq = %* {
-          "Action": "ListUsers",
-          "Version": "2010-05-08",
-        }
         canonical = canonicalRequest(HttpGet, url, q, h, "", normal, digest)
         x = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
         y = "f536975d06c0309214f805bb90ccff089219ecd68b2577efef23edd43b7e1a59"
