@@ -107,11 +107,13 @@ proc encodedHeaders(headers: HttpHeaders): EncodedHeaders =
   var
     signed, canonical: string
     heads: seq[KeyValue]
-  if headers == nil:
+  if headers.isEmpty:
     return (signed: "", canonical: "")
+  # i know it's deprecated, but there's no reasonable replacement (yet)
+  # https://github.com/nim-lang/Nim/issues/12211
   for h in headers.table.pairs:
     heads.add (key: h[0].strip.toLowerAscii,
-               val: seq[string](h[1]).map(trimAll).join(","))
+               val: h[1].map(trimAll).join(","))
   heads = heads.sortedByIt (it.key)
   for h in heads:
     if signed.len > 0:
