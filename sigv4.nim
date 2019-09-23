@@ -102,12 +102,19 @@ proc trimAll(s: string): string =
   while "  " in result:
     result = result.replace("  ", " ")
 
+# a hack to work around nim 0.20 -> 1.0 interface change
+template isEmptyAnyVersion(h: HttpHeaders): bool =
+  when compiles(h.isEmpty):
+    h.isEmpty
+  else:
+    h == nil
+
 proc encodedHeaders(headers: HttpHeaders): EncodedHeaders =
   ## convert http headers into encoded header string
   var
     signed, canonical: string
     heads: seq[KeyValue]
-  if headers.isEmpty:
+  if headers.isEmptyAnyVersion:
     return (signed: "", canonical: "")
   # i know it's deprecated, but there's no reasonable replacement (yet)
   # https://github.com/nim-lang/Nim/issues/12211
