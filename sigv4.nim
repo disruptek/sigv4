@@ -187,6 +187,7 @@ template assertDateLooksValid(d: string; format: DateFormat) =
       assert d.len == "YYYYMMDDTHHMMSSZ".len
 
 proc makeDateTime*(date: string = ""): string =
+  ## produce a date+time string as found in stringToSign, eg. YYYYMMDDTHHMMSSZ
   if date == "":
     result = getTime().utc.format(basicISO8601)
   else:
@@ -194,6 +195,7 @@ proc makeDateTime*(date: string = ""): string =
     result = date[date.low .. ("YYYYMMDDTHHMMSSZ".len-1)]
 
 proc makeDate*(date: string = ""): string =
+  ## produce a date string as required for credentialScope, eg. YYYYMMDD
   if date == "":
     result = getTime().utc.format(dateISO8601)
   else:
