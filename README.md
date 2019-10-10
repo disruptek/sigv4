@@ -39,7 +39,7 @@ let
   digest = SHA256
   
   # an ISO8601 date string attached to the request
-  date = "20150830T123600Z"
+  date = makeDateTime()
   
   # a JsonNode holding the query string key/value pairs, as provided by the stdlib
   query = %* {
