@@ -34,12 +34,26 @@ proc encodedSegment(segment: string; passes: int): string =
   if passes > 1:
     result = result.encodedSegment(passes - 1)
 
+proc safeSplitPath(path: string): tuple[head, tail: string] =
+  ## a split path that won't change with nim versions
+  var sepPos = -1
+  for i in countdown(len(path)-1, 0):
+    if path[i] in {DirSep, AltSep}:
+      sepPos = i
+      break
+  if sepPos >= 0:
+    result.head = substr(path, 0, sepPos-1)
+    result.tail = substr(path, sepPos+1)
+  else:
+    result.head = ""
+    result.tail = path
+
 proc encodedComponents(path: string; passes: int): string =
   ## encode an entire path with a number of passes
   if '/' notin path:
     return path.encodedSegment(passes)
   let
-    splat = path.splitPath
+    splat = path.safeSplitPath
     tail = splat.tail.encodedSegment(passes)
   result = splat.head.encodedComponents(passes) & "/" & tail
 
@@ -72,6 +86,7 @@ proc encodedQuery(input: openarray[KeyValue]): string =
     result &= encodeUrl(q.val, usePlus = false)
 
 proc toQueryValue(node: JsonNode): string =
+  ## render a json node as a query string value
   assert node != nil
   result = case node.kind:
   of JString: node.getStr
@@ -91,6 +106,7 @@ proc encodedQuery(node: JsonNode): string =
   result = encodedQuery(query)
 
 proc normalizeUrl*(url: string; query: JsonNode; normalize: PathNormal = Default): Uri =
+  ## reorder and encode path and query components of a url
   result = url.parseUri
   result.path = result.path.encodedPath(normalize)
   result.query = query.encodedQuery
