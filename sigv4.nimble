@@ -1,8 +1,8 @@
-version = "1.0.4"
+version = "1.0.5"
 author = "disruptek"
 description = "Amazon Web Services Signature Version 4"
 license = "MIT"
-requires "nim >= 0.20.0"
+requires "nim >= 0.20.2"
 requires "nimcrypto >= 0.4.0"
 
 proc execCmd(cmd: string) =
