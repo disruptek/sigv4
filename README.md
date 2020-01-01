@@ -1,4 +1,4 @@
-# sigv4
+# sigv4 [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=master)](https://travis-ci.org/disruptek/sigv4)
 Amazon Web Services Signature Version 4 request signing in Nim
 
 _For AWS APIs in Nim, see https://github.com/disruptek/atoz_
@@ -25,28 +25,28 @@ let
 
   # an AWS Secret Key
   secret = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY"
-  
+
   # the body of the request; eg. POST content
   payload = ""
-  
+
   # the AWS region against which you are querying
   region = "us-east-1"
-  
+
   # the short name of the service as you might find in, say, an ARN
   service = "iam"
-  
+
   # an enum representing the signing algorithm, eg. SHA256 or SHA512
   digest = SHA256
-  
+
   # an ISO8601 date string attached to the request
   date = makeDateTime()
-  
+
   # a JsonNode holding the query string key/value pairs, as provided by the stdlib
   query = %* {
     "Action": "ListUsers",
     "Version": "2010-05-08",
   }
-  
+
   # http headers as provided by the stdlib
   headers = newHttpHeaders(@[
     ("Host", "iam.amazonaws.com"),
