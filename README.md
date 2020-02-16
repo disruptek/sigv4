@@ -78,3 +78,5 @@ The tests use example values from the AWS documentation as above.
 $ nimble test
 ```
 
+## License
+MIT
