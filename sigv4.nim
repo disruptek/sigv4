@@ -75,15 +75,16 @@ proc encodedPath(uri: Uri; style: PathNormal): string =
   ## normalize and encode a URI's path
   result = uri.path.encodedPath(style)
 
-proc encodedQuery(input: openarray[KeyValue]): string =
+proc encodedQuery(input: openArray[KeyValue]): string =
   ## encoded a series of key/value pairs as a query string
-  let query = input.sortedByIt (it.key, it.val)
+  let
+    query = input.sortedByIt (it.key, it.val)
   for q in query.items:
     if result.len > 0:
-      result &= "&"
-    result &= encodeUrl(q.key, usePlus = false)
-    result &= "="
-    result &= encodeUrl(q.val, usePlus = false)
+      result.add "&"
+    result.add encodeUrl(q.key, usePlus = false)
+    result.add "="
+    result.add encodeUrl(q.val, usePlus = false)
 
 proc toQueryValue(node: JsonNode): string =
   ## render a json node as a query string value
