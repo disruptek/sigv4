@@ -59,7 +59,7 @@ proc encodedComponents(path: string; passes: int): string =
 
 proc encodedPath(path: string; style: PathNormal): string =
   ## normalize and encode a URI's path
-  case style:
+  case style
   of S3:
     result = path
     result = result.encodedComponents(passes=1)
@@ -77,8 +77,10 @@ proc encodedPath(uri: Uri; style: PathNormal): string =
 
 proc encodedQuery(input: openArray[KeyValue]): string =
   ## encoded a series of key/value pairs as a query string
+  echo input
   let
     query = input.sortedByIt (it.key, it.val)
+  echo query
   for q in query.items:
     if result.len > 0:
       result.add "&"
@@ -89,10 +91,15 @@ proc encodedQuery(input: openArray[KeyValue]): string =
 proc toQueryValue(node: JsonNode): string =
   ## render a json node as a query string value
   assert node != nil
-  result = case node.kind:
-  of JString: node.getStr
-  of JInt, JFloat, JBool: $node
-  of JNull: ""
+  if node == nil:
+    raise newException(ValueError, "pass me a JsonNode")
+  result = case node.kind
+  of JString:
+    node.getStr
+  of JInt, JFloat, JBool:
+    $node
+  of JNull:
+    ""
   else:
     raise newException(ValueError, $node.kind & " unsupported")
 
@@ -104,6 +111,7 @@ proc encodedQuery(node: JsonNode): string =
     raise newException(ValueError, "pass me a JObject")
   for q in node.pairs:
     query.add (key: q.key, val: q.val.toQueryValue)
+  echo query
   result = encodedQuery(query)
 
 proc normalizeUrl*(url: string; query: JsonNode; normalize: PathNormal = Default): Uri =
@@ -166,7 +174,7 @@ when defined(debug):
 
 proc hash*(payload: string; digest: SigningAlgo): string =
   ## hash an arbitrary string using the given algorithm
-  case digest:
+  case digest
   of SHA256: result = md.digest(sha.sha256, payload).toLowerHex
   of SHA512: result = md.digest(sha.sha512, payload).toLowerHex
 
@@ -184,14 +192,14 @@ proc canonicalRequest*(meth: HttpMethod;
     heads = headers.encodedHeaders()
 
   result = httpmethod.toUpperAscii & "\n"
-  result &= uri.encodedPath(normalize) & "\n"
-  result &= query.encodedQuery() & "\n"
-  result &= heads.canonical & "\n"
-  result &= heads.signed & "\n"
-  result &= hash(payload, digest)
+  result.add uri.encodedPath(normalize) & "\n"
+  result.add query.encodedQuery() & "\n"
+  result.add heads.canonical & "\n"
+  result.add heads.signed & "\n"
+  result.add hash(payload, digest)
 
 template assertDateLooksValid(d: string; format: DateFormat) =
-  case format:
+  case format
   of JustDate:
     if d.len > "YYYYMMDD".len:
       assert d["YYYYMMDD".len] == 'T'
@@ -227,9 +235,9 @@ proc credentialScope*(region: string; service: string; date= ""): string =
 proc stringToSign*(hash: string; scope: string; date= ""; digest: SigningAlgo = SHA256): string =
   ## combine signing algo, payload hash, credential scope, and date
   result = $digest & "\n"
-  result &= date.makeDateTime & "\n"
-  result &= scope & "\n"
-  result &= hash
+  result.add date.makeDateTime & "\n"
+  result.add scope & "\n"
+  result.add hash
 
 proc deriveKey(H: typedesc; secret: string; date: string;
                 region: string; service: string): md.MDigest[H.bits] =
@@ -254,7 +262,7 @@ proc calculateSignature*(secret: string; date: string; region: string;
                          service: string; tosign: string;
                          digest: SigningAlgo = SHA256): string =
   ## compute a signature using secret, string-to-sign, and other details
-  case digest:
+  case digest
   of SHA256:
     var key = deriveKey(sha.sha256, secret, date, region, service)
     result = calculateSignature(key, tosign).toLowerHex
@@ -317,9 +325,15 @@ when isMainModule:
           "a": 1,
           "B": 2.0,
           "c": newJNull(),
+          "d": newJBool(true),
           "3 4": "5,🙄",
         }
-      check cq.encodedQuery == "3%204=5%2C%F0%9F%99%84&B=2.0&a=1&c="
+      check cq["a"].toQueryValue == "1"
+      check cq["B"].toQueryValue == "2.0"
+      check cq["c"].toQueryValue == ""
+      check cq["d"].toQueryValue == "true"
+      check cq["3 4"].toQueryValue == "5,🙄"
+      check cq.encodedQuery == "3%204=5%2C%F0%9F%99%84&B=2.0&a=1&c=&d=true"
       check q.encodedQuery == "Action=ListUsers&Version=2010-05-08"
     test "encoded headers":
       var
