@@ -1,4 +1,6 @@
-# sigv4 [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=master)](https://travis-ci.org/disruptek/sigv4)
+# sigv4
+- `arc +/ cpp +/ nim-1.0` [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=master)](https://travis-ci.org/disruptek/sigv4)
+- `arc +/ cpp +/ nim-1.3` [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=devel)](https://travis-ci.org/disruptek/sigv4)
 Amazon Web Services Signature Version 4 request signing in Nim
 
 _For AWS APIs in Nim, see https://github.com/disruptek/atoz_
