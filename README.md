@@ -8,7 +8,10 @@ The request signing process is documented at https://docs.aws.amazon.com/general
 This code depends upon nimcrypto https://github.com/cheatfate/nimcrypto for SHA/HMAC routines.
 
 ## 2020-04-28
-The devel branch is tested in CI in `--gc:arc` and, currently, demonstrates [this arc bug](https://github.com/nim-lang/Nim/issues/14079).
+
+The devel branch is tested in CI in `--gc:arc` and, currently, demonstrates
+[this arc bug](https://github.com/nim-lang/Nim/issues/14079). The code works
+fine in C/C++ with the default alloc.
 
 ## Installation
 ```
