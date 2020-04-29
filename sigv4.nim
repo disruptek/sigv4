@@ -77,10 +77,8 @@ proc encodedPath(uri: Uri; style: PathNormal): string =
 
 proc encodedQuery(input: openArray[KeyValue]): string =
   ## encoded a series of key/value pairs as a query string
-  echo input
   let
     query = input.sortedByIt (it.key, it.val)
-  echo query
   for q in query.items:
     if result.len > 0:
       result.add "&"
@@ -111,7 +109,6 @@ proc encodedQuery(node: JsonNode): string =
     raise newException(ValueError, "pass me a JObject")
   for q in node.pairs:
     query.add (key: q.key, val: q.val.toQueryValue)
-  echo query
   result = encodedQuery(query)
 
 proc normalizeUrl*(url: string; query: JsonNode; normalize: PathNormal = Default): Uri =
