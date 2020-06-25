@@ -65,6 +65,8 @@ proc encodedPath(path: string; style: PathNormal): string =
     result = result.encodedComponents(passes=1)
   of Default:
     result = path.normalizedPath
+    when DirSep != '/':
+      result = result.replace(DirSep, '/')
     if path.endsWith("/") and not result.endsWith("/"):
       result = result & "/"
     result = result.encodedComponents(passes=2)
@@ -228,6 +230,8 @@ proc credentialScope*(region: string; service: string; date= ""): string =
   ## combine region, service, and date into a scope
   let d = date.makeDate
   result = d / region.toLowerAscii / service.toLowerAscii / "aws4_request"
+  when DirSep != '/':
+    result = result.replace(DirSep, '/')
 
 proc stringToSign*(hash: string; scope: string; date= ""; digest: SigningAlgo = SHA256): string =
   ## combine signing algo, payload hash, credential scope, and date
