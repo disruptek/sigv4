@@ -1,9 +1,9 @@
-version = "1.0.5"
+version = "1.0.6"
 author = "disruptek"
 description = "Amazon Web Services Signature Version 4"
 license = "MIT"
 requires "nim >= 0.20.2"
-requires "nimcrypto >= 0.4.0"
+requires "https://github.com/disruptek/nimcrypto#tinycc"
 
 proc execCmd(cmd: string) =
   echo "execCmd:" & cmd
