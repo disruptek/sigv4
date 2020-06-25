@@ -1,17 +1,14 @@
-# sigv4 [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=master)](https://travis-ci.org/disruptek/sigv4)
+# sigv4
 Amazon Web Services Signature Version 4 request signing in Nim
+
+- `cpp +/ nim-1.0` [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=master)](https://travis-ci.org/disruptek/sigv4)
+- `arc +/ cpp +/ nim-1.3` [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=devel)](https://travis-ci.org/disruptek/sigv4)
 
 _For AWS APIs in Nim, see https://github.com/disruptek/atoz_
 
 The request signing process is documented at https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html and most of the procedures in this code should be identifiable in that documentation.
 
-This code depends upon nimcrypto https://github.com/cheatfate/nimcrypto for SHA/HMAC routines.
-
-## 2020-04-28
-
-The devel branch is tested in CI in `--gc:arc` and, currently, demonstrates
-[this arc bug](https://github.com/nim-lang/Nim/issues/14079). The code works
-fine in C/C++ with the default alloc.
+This code depends upon nimcrypto https://github.com/disurptek/nimcrypto for SHA/HMAC routines.
 
 ## Installation
 ```
