@@ -8,9 +8,43 @@ import sequtils
 import tables
 import times
 
-import nimcrypto/sha2 as sha
-import nimcrypto/hash as md
-import nimcrypto/hmac as hmac
+when defined(sigv4UseNimCrypto):
+  import nimcrypto/sha2 as sha
+  import nimcrypto/hash as md
+  import nimcrypto/hmac as hmac
+
+  type
+    MDigest256 = md.MDigest[256]
+    MDigest512 = md.MDigest[512]
+
+    SHA256Digest = sha.sha256
+    SHA512Digest = sha.sha512
+
+  func computeSHA256(s: string): MDigest256 = md.digest(SHA256Digest, s)
+  func computeSHA512(s: string): MDigest512 = md.digest(SHA512Digest, s)
+
+  func newHmac(H: typedesc; key: string; data: string): auto =
+    result = hmac.hmac(H, key, data)
+
+  func add[H](key: H; data: string): H =
+    when H is MDigest256: result = hmac.hmac(SHA256Digest, key.data, data)
+    when H is MDigest512: result = hmac.hmac(SHA512Digest, key.data, data)
+
+else:
+  import nimSHA2 as sha
+  import hmac
+
+  type
+    MDigest256 = SHA256Digest
+    MDigest512 = SHA512Digest
+
+  func newHmac(H: typedesc; key: string; data: string): auto =
+    when H is SHA256Digest: result = hmac_sha256(key, data)
+    when H is SHA512Digest: result = hmac_sha512(key, data)
+
+  func add[H](key: H; data: string): H =
+    when H is MDigest256: result = hmac_sha256($key, data)
+    when H is MDigest512: result = hmac_sha512($key, data)
 
 const
   dateISO8601 = initTimeFormat "yyyyMMdd"
@@ -24,7 +58,7 @@ type
   SigningAlgo* = enum
     SHA256 = "AWS4-HMAC-SHA256"
     SHA512 = "AWS4-HMAC-SHA512"
-  DigestTypes = md.MDigest[256] | md.MDigest[512]
+  DigestTypes = MDigest256 or MDigest512
   EncodedHeaders* = tuple[signed: string; canonical: string]
   KeyValue = tuple[key: string; val: string]
 
@@ -168,14 +202,14 @@ else:
     result = toLowerAscii($digest)
 
 when defined(debug):
-  converter toString(digest: md.MDigest[256]): string = digest.toLowerHex
-  converter toString(digest: md.MDigest[512]): string = digest.toLowerHex
+  converter toString(digest: MDigest256): string = digest.toLowerHex
+  converter toString(digest: MDigest512): string = digest.toLowerHex
 
 proc hash*(payload: string; digest: SigningAlgo): string =
   ## hash an arbitrary string using the given algorithm
   case digest
-  of SHA256: result = md.digest(sha.sha256, payload).toLowerHex
-  of SHA512: result = md.digest(sha.sha512, payload).toLowerHex
+  of SHA256: result = computeSHA256(payload).toLowerHex
+  of SHA512: result = computeSHA512(payload).toLowerHex
 
 proc canonicalRequest*(meth: HttpMethod;
                       url: string;
@@ -241,23 +275,17 @@ proc stringToSign*(hash: string; scope: string; date= ""; digest: SigningAlgo = 
   result.add hash
 
 proc deriveKey(H: typedesc; secret: string; date: string;
-                region: string; service: string): md.MDigest[H.bits] =
+               region: string; service: string): auto =
   ## compute the signing key for a subsequent signature
   var
-    digest = hmac.hmac(H, "AWS4" & secret, date.makeDate)
-  digest = hmac.hmac(H, digest.data, region.toLowerAscii)
-  digest = hmac.hmac(H, digest.data, service.toLowerAscii)
-  digest = hmac.hmac(H, digest.data, "aws4_request")
+    digest = newHmac(H, "AWS4" & secret, date.makeDate)
+  digest = add(digest, region.toLowerAscii)
+  digest = add(digest, service.toLowerAscii)
+  digest = add(digest, "aws4_request")
   result = digest
 
-#proc calculateSignature[B: static[int]](H: typedesc; key: md.MDigest[B]; tosign: string): md.MDigest[H.bits] =
-#  result = hmac.hmac(H, key.data, tosign)
-
-proc calculateSignature(key: md.MDigest[256]; tosign: string): md.MDigest[256] =
-  result = hmac.hmac(sha.sha256, key.data, tosign)
-
-proc calculateSignature(key: md.MDigest[512]; tosign: string): md.MDigest[512] =
-  result = hmac.hmac(sha.sha512, key.data, tosign)
+proc calculateSignature[T: DigestTypes](key: T; tosign: string): T =
+  result = key.add(tosign)
 
 proc calculateSignature*(secret: string; date: string; region: string;
                          service: string; tosign: string;
@@ -265,10 +293,10 @@ proc calculateSignature*(secret: string; date: string; region: string;
   ## compute a signature using secret, string-to-sign, and other details
   case digest
   of SHA256:
-    var key = deriveKey(sha.sha256, secret, date, region, service)
+    var key = deriveKey(SHA256Digest, secret, date, region, service)
     result = calculateSignature(key, tosign).toLowerHex
   of SHA512:
-    var key = deriveKey(sha.sha512, secret, date, region, service)
+    var key = deriveKey(SHA512Digest, secret, date, region, service)
     result = calculateSignature(key, tosign).toLowerHex
 
 when isMainModule:
@@ -398,7 +426,7 @@ content-type;host;x-amz-date
 """ & x
     test "derive key":
       let
-        key = deriveKey(sha.sha256, secret, date=date,
+        key = deriveKey(SHA256Digest, secret, date=date,
                         region=region, service=service)
         x = "c4afb1cc5771d871763a393e44b703571b55cc28424d1a5e86da6ed3c154a4b9"
       check x == key.toLowerHex
@@ -407,7 +435,7 @@ content-type;host;x-amz-date
         req = canonicalRequest(HttpGet, url, q, h, "", normal, digest)
         scope = credentialScope(region=region, service=service, date=date)
         sts = stringToSign(req.hash(digest), scope, date=date, digest=digest)
-        key = deriveKey(sha.sha256, secret, date=date,
+        key = deriveKey(SHA256Digest, secret, date=date,
                         region=region, service=service)
         x = "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7"
       check x == calculateSignature(key, sts).toLowerHex

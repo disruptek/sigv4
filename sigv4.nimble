@@ -3,7 +3,11 @@ author = "disruptek"
 description = "Amazon Web Services Signature Version 4"
 license = "MIT"
 requires "nim >= 0.20.2"
-requires "https://github.com/disruptek/nimcrypto#tinycc"
+
+when defined(sigv4UseNimCrypto):
+  requires "https://github.com/disruptek/nimcrypto#tinycc"
+else:
+  requires "https://github.com/OpenSystemsLab/hmac.nim < 1.0.0"
 
 proc execCmd(cmd: string) =
   echo "execCmd:" & cmd
