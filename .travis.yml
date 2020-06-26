@@ -1,10 +1,12 @@
 os:
+  - windows
   - linux
   - osx
 
 language: c
 
 env:
+  - BRANCH=1.2.2
   - BRANCH=devel
 
 cache:
