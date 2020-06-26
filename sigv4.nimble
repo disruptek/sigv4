@@ -7,7 +7,7 @@ requires "nim >= 0.20.2"
 when defined(sigv4UseNimCrypto):
   requires "https://github.com/disruptek/nimcrypto#tinycc"
 else:
-  requires "https://github.com/OpenSystemsLab/hmac.nim < 1.0.0"
+  requires "https://github.com/jangko/nimSHA2"
 
 proc execCmd(cmd: string) =
   echo "execCmd:" & cmd

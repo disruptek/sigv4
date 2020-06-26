@@ -26,25 +26,54 @@ when defined(sigv4UseNimCrypto):
   func newHmac(H: typedesc; key: string; data: string): auto =
     result = hmac.hmac(H, key, data)
 
-  func add[H](key: H; data: string): H =
-    when H is MDigest256: result = hmac.hmac(SHA256Digest, key.data, data)
-    when H is MDigest512: result = hmac.hmac(SHA512Digest, key.data, data)
+  func add[H](key: var H; data: string) =
+    when H is MDigest256: key = hmac.hmac(SHA256Digest, key.data, data)
+    when H is MDigest512: key = hmac.hmac(SHA512Digest, key.data, data)
 
 else:
   import nimSHA2 as sha
-  import hmac
 
   type
     MDigest256 = SHA256Digest
     MDigest512 = SHA512Digest
 
-  func newHmac(H: typedesc; key: string; data: string): auto =
-    when H is SHA256Digest: result = hmac_sha256(key, data)
-    when H is SHA512Digest: result = hmac_sha512(key, data)
+  # ripped from hmac.nim
+  proc hmac[T](key: string; data: string; hash: proc(s: string; rep = 1): T;
+               digest_size: int, block_size = 64;
+               opad = 0x5c; ipad = 0x36): T =
+    var keyA: seq[uint8] = @[]
+    var o_key_pad = newString(block_size + digest_size)
+    var i_key_pad = newString(block_size)
 
-  func add[H](key: H; data: string): H =
-    when H is MDigest256: result = hmac_sha256($key, data)
-    when H is MDigest512: result = hmac_sha512($key, data)
+    if key.len > block_size:
+      for n in hash(key):
+          keyA.add(n.uint8)
+    else:
+      for n in key:
+         keyA.add(n.uint8)
+
+    while keyA.len < block_size:
+      keyA.add(0x00'u8)
+
+    for i in 0..block_size-1:
+      o_key_pad[i] = char(keyA[i].ord xor opad)
+      i_key_pad[i] = char(keyA[i].ord xor ipad)
+    var i = 0
+    for x in hash(i_key_pad & data):
+      o_key_pad[block_size + i] = char(x)
+      inc(i)
+    # meh...
+    result = hash(o_key_pad)
+
+  # XXX: return unfinalized digest
+  func newHmac(H: typedesc; key: string; data: string): auto =
+    when H is SHA256Digest: result = hmac(key, data, computeSHA256, 32, 64)
+    when H is SHA512Digest: result = hmac(key, data, computeSHA512, 64, 128)
+
+  # XXX: perform update, not replacement
+  func add[H](key: var H; data: string): H =
+    when H is MDigest256: key = hmac(key, data, computeSHA256, 32, 64)
+    when H is MDigest512: key = hmac(key, data, computeSHA512, 64, 128)
 
 const
   dateISO8601 = initTimeFormat "yyyyMMdd"
@@ -276,15 +305,10 @@ proc stringToSign*(hash: string; scope: string; date= ""; digest: SigningAlgo = 
 proc deriveKey(H: typedesc; secret: string; date: string;
                region: string; service: string): auto =
   ## compute the signing key for a subsequent signature
-  var
-    digest = newHmac(H, "AWS4" & secret, date.makeDate)
-  digest = add(digest, region.toLowerAscii)
-  digest = add(digest, service.toLowerAscii)
-  digest = add(digest, "aws4_request")
-  result = digest
-
-proc calculateSignature[T: DigestTypes](key: T; tosign: string): T =
-  result = key.add(tosign)
+  result = newHmac(H, "AWS4" & secret, date.makeDate)
+  result.add region.toLowerAscii
+  result.add service.toLowerAscii
+  result.add "aws4_request"
 
 proc calculateSignature*(secret: string; date: string; region: string;
                          service: string; tosign: string;
@@ -293,10 +317,12 @@ proc calculateSignature*(secret: string; date: string; region: string;
   case digest
   of SHA256:
     var key = deriveKey(SHA256Digest, secret, date, region, service)
-    result = calculateSignature(key, tosign).toLowerHex
+    key.add tosign
+    result = key.toLowerHex
   of SHA512:
     var key = deriveKey(SHA512Digest, secret, date, region, service)
-    result = calculateSignature(key, tosign).toLowerHex
+    key.add tosign
+    result = key.toLowerHex
 
 when isMainModule:
   import unittest
@@ -437,6 +463,6 @@ content-type;host;x-amz-date
         key = deriveKey(SHA256Digest, secret, date=date,
                         region=region, service=service)
         x = "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7"
-      check x == calculateSignature(key, sts).toLowerHex
+      #check x == calculateSignature(key, sts).toLowerHex
       check x == calculateSignature(secret=secret, date=date, region=region,
                                     service=service, tosign=sts, digest=digest)
