@@ -202,8 +202,7 @@ else:
     result = toLowerAscii($digest)
 
 when defined(debug):
-  converter toString(digest: MDigest256): string = digest.toLowerHex
-  converter toString(digest: MDigest512): string = digest.toLowerHex
+  converter toString(digest: DigestTypes): string = digest.toLowerHex
 
 proc hash*(payload: string; digest: SigningAlgo): string =
   ## hash an arbitrary string using the given algorithm
