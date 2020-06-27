@@ -8,11 +8,18 @@ Amazon Web Services Signature Version 4 request signing in Nim
 
 _For AWS APIs in Nim, see https://github.com/disruptek/atoz_
 
-The request signing process is documented at https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html and most of the procedures in this code should be identifiable in that documentation.
-
-This code depends upon nimcrypto https://github.com/disurptek/nimcrypto for SHA/HMAC routines.
+The request signing process is documented at
+https://docs.aws.amazon.com/general/latest/gr/signature-version-4.html and most
+of the procedures in this code should be identifiable in that documentation.
 
 ## Installation
+
+By default, we use https://github.com/jangko/nimSHA2 for SHA256/SHA512
+routines.
+
+If you already have a dependency on NimCrypto, you can use that instead by
+passing `--define:sigv4UseNimCrypto` to the compiler.
+
 ```
 $ nimble install sigv4
 ```
