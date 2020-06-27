@@ -83,6 +83,9 @@ function main() {
   </div>
   <div id="global-links">
     <ul class="simple">
+    <li>
+      <a href="theindex.html">Index</a>
+    </li>
     </ul>
   </div>
   <div id="searchInputDiv">
@@ -102,8 +105,7 @@ function main() {
   <ul class="simple simple-toc-section">
       <li><a class="reference" href="#PathNormal"
     title="PathNormal = enum
-  Default,                    ## normalize paths to dereference `.` and `..` and de-dupe `/`
-  S3                          ## do not normalize paths, and perform one less pass of escaping"><wbr />Path<wbr />Normal<span class="attachedType"></span></a></li>
+  Default, S3"><wbr />Path<wbr />Normal<span class="attachedType"></span></a></li>
   <li><a class="reference" href="#SigningAlgo"
     title="SigningAlgo = enum
   SHA256 = &quot;AWS4-HMAC-SHA256&quot;, SHA512 = &quot;AWS4-HMAC-SHA512&quot;"><wbr />Signing<wbr />Algo<span class="attachedType"></span></a></li>
@@ -152,8 +154,7 @@ function main() {
 <dl class="item">
 <a id="PathNormal"></a>
 <dt><pre><a href="sigv4.html#PathNormal"><span class="Identifier">PathNormal</span></a> <span class="Other">=</span> <span class="Keyword">enum</span>
-  <span class="Identifier">Default</span><span class="Other">,</span>                    <span class="Comment">## normalize paths to dereference `.` and `..` and de-dupe `/`</span>
-  <span class="Identifier">S3</span>                          <span class="Comment">## do not normalize paths, and perform one less pass of escaping</span></pre></dt>
+  <span class="Identifier">Default</span><span class="Other">,</span> <span class="Identifier">S3</span></pre></dt>
 <dd>
 
 
@@ -260,7 +261,7 @@ compute a signature using secret, string-to-sign, and other details
       <div class="twelve-columns footer">
         <span class="nim-sprite"></span>
         <br/>
-        <small style="color: var(--hint);">Made with Nim. Generated: 2020-01-16 19:40:07 UTC</small>
+        <small style="color: var(--hint);">Made with Nim. Generated: 2020-06-27 03:35:41 UTC</small>
       </div>
     </div>
   </div>

@@ -1,12 +1,12 @@
-import os
-import httpcore
-import json
-import strutils
-import uri
-import algorithm
-import sequtils
-import tables
-import times
+import std/os
+import std/httpcore
+import std/json
+import std/strutils
+import std/uri
+import std/algorithm
+import std/sequtils
+import std/tables
+import std/times
 
 when defined(sigv4UseNimCrypto):
   import nimcrypto/sha2 as sha
@@ -26,9 +26,11 @@ when defined(sigv4UseNimCrypto):
   func newHmac(H: typedesc; key: string; data: string): auto =
     result = hmac.hmac(H, key, data)
 
-  func add[H](key: var H; data: string) =
-    when H is MDigest256: key = hmac.hmac(SHA256Digest, key.data, data)
-    when H is MDigest512: key = hmac.hmac(SHA512Digest, key.data, data)
+  func add(key: var MDigest256; data: string) =
+    key = hmac.hmac(SHA256Digest, key.data, data)
+
+  func add(key: var MDigest512; data: string) =
+    key = hmac.hmac(SHA512Digest, key.data, data)
 
 else:
   import nimSHA2 as sha
@@ -37,43 +39,51 @@ else:
     MDigest256 = SHA256Digest
     MDigest512 = SHA512Digest
 
-  # ripped from hmac.nim
-  proc hmac[T](key: string; data: string; hash: proc(s: string; rep = 1): T;
-               digest_size: int, block_size = 64;
-               opad = 0x5c; ipad = 0x36): T =
-    var keyA: seq[uint8] = @[]
-    var o_key_pad = newString(block_size + digest_size)
-    var i_key_pad = newString(block_size)
+  # algo from https://github.com/OpenSystemsLab/hmac.nim/blob/master/hmac.nim
+  # (rewritten to taste)
+  proc hmac[T](key: string; data: string): T =
+    const
+      oxor = 0x5c
+      ixor = 0x36
 
-    if key.len > block_size:
-      for n in hash(key):
-          keyA.add(n.uint8)
-    else:
-      for n in key:
-         keyA.add(n.uint8)
+    when T is MDigest256:
+      let hash = computeSHA256
+      const ds = 32
+      const bs = ds * 2
 
-    while keyA.len < block_size:
-      keyA.add(0x00'u8)
+    when T is MDigest512:
+      let hash = computeSHA512
+      const ds = 64
+      const bs = ds * 2
 
-    for i in 0..block_size-1:
-      o_key_pad[i] = char(keyA[i].ord xor opad)
-      i_key_pad[i] = char(keyA[i].ord xor ipad)
-    var i = 0
-    for x in hash(i_key_pad & data):
-      o_key_pad[block_size + i] = char(x)
-      inc(i)
-    # meh...
-    result = hash(o_key_pad)
+    var work = newSeq[uint8](bs)         # nicely typed bytes, yum!
+    var inputs = newString(bs)           # inputs = block size
+    var output = newString(bs + ds)      # output = block size + digest size
 
-  # XXX: return unfinalized digest
+    # if it's larger than the block size, hash the key to shrink it
+    let key = if len(key) > bs: $hash(key) else: key
+
+    # copy the key over the work
+    copyMem addr work[0], unsafeAddr key[0], len(key)
+
+    # take the key and xor it against output, input constants
+    for i, w in work.pairs:
+      output[i] = char(w xor oxor)
+      inputs[i] = char(w xor ixor)
+
+    # add a hash of input + data to the end of the output
+    let tail = hash(inputs & data)
+    copyMem addr output[bs], unsafeAddr tail[0], len(tail)
+
+    # the final result is a hash of the entire output
+    result = hash(output)
+
   func newHmac(H: typedesc; key: string; data: string): auto =
-    when H is SHA256Digest: result = hmac(key, data, computeSHA256, 32, 64)
-    when H is SHA512Digest: result = hmac(key, data, computeSHA512, 64, 128)
+    when H is SHA256Digest: result = hmac[MDigest256](key, data)
+    when H is SHA512Digest: result = hmac[MDigest512](key, data)
 
-  # XXX: perform update, not replacement
-  func add[H](key: var H; data: string): H =
-    when H is MDigest256: key = hmac(key, data, computeSHA256, 32, 64)
-    when H is MDigest512: key = hmac(key, data, computeSHA512, 64, 128)
+  func add[H](key: var H; data: string) =
+    key = hmac[H]($key, data)
 
 const
   dateISO8601 = initTimeFormat "yyyyMMdd"
@@ -221,14 +231,18 @@ proc signedHeaders*(headers: HttpHeaders): string =
   var encoded = headers.encodedHeaders
   result = encoded.signed
 
-when defined(nimcryptoLowercase):
-  proc toLowerHex(digest: DigestTypes): string =
-    result = $digest
+when defined(sigv4UseNimCrypto):
+  when defined(nimcryptoLowercase):
+    proc toLowerHex(digest: DigestTypes): string =
+      result = $digest
+  else:
+    proc toLowerHex(digest: DigestTypes): string =
+      {.hint: "sigv4: set -d:nimcryptoLowercase".}
+      # ...in order to optimize out the following call...
+      result = toLowerAscii($digest)
 else:
   proc toLowerHex(digest: DigestTypes): string =
-    {.hint: "sigv4: set -d:nimcryptoLowercase".}
-    # ...in order to optimize out the following call...
-    result = toLowerAscii($digest)
+    result = toLowerAscii(digest.toHex)
 
 when defined(debug):
   converter toString(digest: DigestTypes): string = digest.toLowerHex
@@ -260,17 +274,18 @@ proc canonicalRequest*(meth: HttpMethod;
   result.add hash(payload, digest)
 
 template assertDateLooksValid(d: string; format: DateFormat) =
-  case format
-  of JustDate:
-    if d.len > "YYYYMMDD".len:
-      assert d["YYYYMMDD".len] == 'T'
-    else:
-      assert d.len == "YYYYMMDD".len
-  of DateAndTime:
-    if d.len > "YYYYMMDDTHHMMSS".len:
-      assert d["YYYYMMDDTHHMMSS".len] == 'Z'
-    else:
-      assert d.len == "YYYYMMDDTHHMMSSZ".len
+  when not defined(release):
+    case format
+    of JustDate:
+      if d.len > "YYYYMMDD".len:
+        assert d["YYYYMMDD".len] == 'T'
+      else:
+        assert d.len == "YYYYMMDD".len
+    of DateAndTime:
+      if d.len > "YYYYMMDDTHHMMSS".len:
+        assert d["YYYYMMDDTHHMMSS".len] == 'Z'
+      else:
+        assert d.len == "YYYYMMDDTHHMMSSZ".len
 
 proc makeDateTime*(date: string = ""): string =
   ## produce a date+time string as found in stringToSign, eg. YYYYMMDDTHHMMSSZ
@@ -310,6 +325,11 @@ proc deriveKey(H: typedesc; secret: string; date: string;
   result.add service.toLowerAscii
   result.add "aws4_request"
 
+proc calculateSignature(key: DigestTypes; tosign: string): string =
+  var key = key
+  key.add tosign
+  result = key.toLowerHex
+
 proc calculateSignature*(secret: string; date: string; region: string;
                          service: string; tosign: string;
                          digest: SigningAlgo = SHA256): string =
@@ -347,12 +367,14 @@ when isMainModule:
           ("X-Amz-Date", date),
         ]
       var h {.used.}: HttpHeaders = newHttpHeaders(heads)
+
     test "encoded segment":
       check "".encodedSegment(passes=1) == ""
       check "foo".encodedSegment(passes=1) == "foo"
       check "foo".encodedSegment(passes=2) == "foo"
       check "foo bar".encodedSegment(passes=1) == "foo%20bar"
       check "foo bar".encodedSegment(passes=2) == "foo%2520bar"
+
     test "encoded components":
       check "/".encodedComponents(passes=1) == "/"
       check "//".encodedComponents(passes=1) == "//"
@@ -363,6 +385,7 @@ when isMainModule:
       check "/foo bar/".encodedComponents(passes=2) == "/foo%2520bar/"
       check "foo bar".encodedComponents(passes=2) == "foo%2520bar"
       check "foo bar/bif".encodedComponents(passes=2) == "foo%2520bar/bif"
+
     test "encoded path":
       check "/".encodedPath(Default) == "/"
       check "/".encodedPath(S3) == "/"
@@ -373,6 +396,7 @@ when isMainModule:
       check "/foo bar/bif/".encodedPath(Default) == "/foo%2520bar/bif/"
       check "/foo bar//../bif".encodedPath(S3) == "/foo%20bar//../bif"
       check "/foo bar//../bif/".encodedPath(S3) == "/foo%20bar//../bif/"
+
     test "encoded query":
       let
         cq = %* {
@@ -389,6 +413,7 @@ when isMainModule:
       check cq["3 4"].toQueryValue == "5,🙄"
       check cq.encodedQuery == "3%204=5%2C%F0%9F%99%84&B=2.0&a=1&c=&d=true"
       check q.encodedQuery == "Action=ListUsers&Version=2010-05-08"
+
     test "encoded headers":
       var
         rheads = heads.reversed
@@ -399,6 +424,7 @@ when isMainModule:
       check r == h.encodedHeaders()
       h = newHttpHeaders(rheads)
       check r == h.encodedHeaders()
+
     test "signing algos":
       let
         pay = "sigv4 test"
@@ -409,8 +435,14 @@ when isMainModule:
       check pay.hash(SHA256) == e[$SHA256]
       check pay.hash(SHA512) == e[$SHA512]
       check "".hash(SHA256) == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+      var
+        mac = newHmac(SHA256Digest, "some key", "some data")
+      check mac.toLowerHex == "92003059a722e7632fc06d79b2c682849aa17195b617580464d048e12242c844"
+      mac.add "more data"
+      check mac.toLowerHex == "d8758ca7f1f12439dafe3513ef0ee2d9fcda77d12d40721edb9c2d31b6ffc4e2"
+
     test "canonical request":
-      # example from amazon
       discard """
       GET https://iam.amazonaws.com/?Action=ListUsers&Version=2010-05-08 HTTP/1.1
 Host: iam.amazonaws.com
@@ -431,6 +463,7 @@ x-amz-date:20150830T123600Z
 content-type;host;x-amz-date
 """ & x
       check canonical.hash(digest) == y
+
     test "credential scope":
       let
         d = "20200101T55555555555"
@@ -438,6 +471,7 @@ content-type;host;x-amz-date
         skope = credentialScope(region=region, service=service, date=date)
       check scope == "20200101/us-west-1/iam/aws4_request"
       check skope == "20150830/us-east-1/iam/aws4_request"
+
     test "string to sign":
       let
         req = canonicalRequest(HttpGet, url, q, h, "", normal, digest)
@@ -449,12 +483,14 @@ content-type;host;x-amz-date
 20150830T123600Z
 20150830/us-east-1/iam/aws4_request
 """ & x
+
     test "derive key":
       let
         key = deriveKey(SHA256Digest, secret, date=date,
                         region=region, service=service)
         x = "c4afb1cc5771d871763a393e44b703571b55cc28424d1a5e86da6ed3c154a4b9"
       check x == key.toLowerHex
+
     test "calculate signature":
       let
         req = canonicalRequest(HttpGet, url, q, h, "", normal, digest)
@@ -463,6 +499,6 @@ content-type;host;x-amz-date
         key = deriveKey(SHA256Digest, secret, date=date,
                         region=region, service=service)
         x = "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7"
-      #check x == calculateSignature(key, sts).toLowerHex
+      check x == calculateSignature(key, sts)
       check x == calculateSignature(secret=secret, date=date, region=region,
                                     service=service, tosign=sts, digest=digest)
