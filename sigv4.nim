@@ -347,6 +347,11 @@ proc calculateSignature*(secret: string; date: string; region: string;
 when isMainModule:
   import unittest
 
+  when defined(sigv4UseNimCrypto):
+    echo "\ntesting with nimcrypto"
+  else:
+    echo "\ntesting with nimSHA2"
+
   suite "sig v4":
     setup:
       let

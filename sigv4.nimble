@@ -2,11 +2,15 @@ version = "1.0.9"
 author = "disruptek"
 description = "Amazon Web Services Signature Version 4"
 license = "MIT"
-requires "nim >= 0.20.2"
 
-when defined(sigv4UseNimCrypto):
-  requires "https://github.com/cheatfate/nimcrypto < 1.0.0"
+when getEnv("GITHUB_ACTIONS", "false") != "true":
+  when defined(sigv4UseNimCrypto):
+    requires "https://github.com/cheatfate/nimcrypto < 1.0.0"
+  else:
+    requires "https://github.com/jangko/nimSHA2 < 1.0.0"
 else:
+  # just require everything for CI purposes
+  requires "https://github.com/cheatfate/nimcrypto < 1.0.0"
   requires "https://github.com/jangko/nimSHA2 < 1.0.0"
 
 proc execCmd(cmd: string) =
