@@ -1,11 +1,12 @@
 # sigv4
-Amazon Web Services Signature Version 4 request signing in Nim
 
 [![Test Matrix](https://github.com/disruptek/sigv4/workflows/CI/badge.svg)](https://github.com/disruptek/sigv4/actions?query=workflow%3ACI)
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/disruptek/sigv4?style=flat)](https://github.com/disruptek/sigv4/releases/latest)
 ![Minimum supported Nim version](https://img.shields.io/badge/nim-1.0.8%2B-informational?style=flat&logo=nim)
 [![License](https://img.shields.io/github/license/disruptek/sigv4?style=flat)](#license)
 [![buy me a coffee](https://img.shields.io/badge/donate-buy%20me%20a%20coffee-orange.svg)](https://www.buymeacoffee.com/disruptek)
+
+Amazon Web Services Signature Version 4 request signing in Nim
 
 _For AWS APIs in Nim, see https://github.com/disruptek/atoz_
 
@@ -22,7 +23,7 @@ If you already have a dependency on NimCrypto, you can use that instead by
 passing `--define:sigv4UseNimCrypto` to the compiler.
 
 ```
-$ nimph clone disruptek/jason
+$ nimph clone disruptek/sigv4
 ```
 or if you think package managers are stupid,
 ```

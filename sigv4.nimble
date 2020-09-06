@@ -1,4 +1,4 @@
-version = "1.0.8"
+version = "1.0.9"
 author = "disruptek"
 description = "Amazon Web Services Signature Version 4"
 license = "MIT"
@@ -15,7 +15,7 @@ proc execCmd(cmd: string) =
 
 proc execTest(test: string) =
   when getEnv("GITHUB_ACTIONS", "false") != "true":
-    execCmd "nim c -r " & test
+    execCmd "nim c -r -f " & test
     when (NimMajor, NimMinor) >= (1, 2):
       execCmd "nim cpp --gc:arc -d:danger -r " & test
   else:
@@ -30,3 +30,4 @@ proc execTest(test: string) =
 
 task test, "run tests for ci":
   execTest("sigv4.nim")
+  execTest("--define:sigv4UseNimCrypto sigv4.nim")
