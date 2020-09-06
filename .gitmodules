@@ -1,0 +1,8 @@
+[submodule "nimcrypto"]
+	path = nimcrypto
+	url = https://github.com/cheatfate/nimcrypto
+	branch = master
+[submodule "nimSHA2"]
+	path = nimSHA2
+	url = https://github.com/jangko/nimSHA2
+	branch = master

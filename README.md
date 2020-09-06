@@ -1,10 +1,11 @@
 # sigv4
 Amazon Web Services Signature Version 4 request signing in Nim
 
-- `cpp +/ nim-0.20` [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=master)](https://travis-ci.org/disruptek/sigv4)
-- `cpp +/ nim-1.0` [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=master)](https://travis-ci.org/disruptek/sigv4)
-- `arc +/ cpp +/ nim-1.2` [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=devel)](https://travis-ci.org/disruptek/sigv4)
-- `arc +/ cpp +/ nim-1.3` [![Build Status](https://travis-ci.org/disruptek/sigv4.svg?branch=devel)](https://travis-ci.org/disruptek/sigv4)
+[![Test Matrix](https://github.com/disruptek/sigv4/workflows/CI/badge.svg)](https://github.com/disruptek/sigv4/actions?query=workflow%3ACI)
+[![GitHub release (latest by date)](https://img.shields.io/github/v/release/disruptek/sigv4?style=flat)](https://github.com/disruptek/sigv4/releases/latest)
+![Minimum supported Nim version](https://img.shields.io/badge/nim-1.3.5%2B-informational?style=flat&logo=nim)
+[![License](https://img.shields.io/github/license/disruptek/sigv4?style=flat)](#license)
+[![buy me a coffee](https://img.shields.io/badge/donate-buy%20me%20a%20coffee-orange.svg)](https://www.buymeacoffee.com/disruptek)
 
 _For AWS APIs in Nim, see https://github.com/disruptek/atoz_
 
@@ -21,7 +22,16 @@ If you already have a dependency on NimCrypto, you can use that instead by
 passing `--define:sigv4UseNimCrypto` to the compiler.
 
 ```
-$ nimble install sigv4
+$ nimph clone disruptek/jason
+```
+or if you think package managers are stupid,
+```
+$ git clone https://github.com/disruptek/sigv4
+$ echo '--path="$config/sigv4/"' >> nim.cfg
+```
+or if you're still using Nimble like it's 2012,
+```
+$ nimble install https://github.com/disruptek/sigv4
 ```
 
 ## Usage
