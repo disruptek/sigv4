@@ -1,11 +1,11 @@
-version = "1.0.9"
+version = "1.0.10"
 author = "disruptek"
 description = "Amazon Web Services Signature Version 4"
 license = "MIT"
 
 when getEnv("GITHUB_ACTIONS", "false") != "true":
   when defined(sigv4UseNimCrypto):
-    requires "https://github.com/cheatfate/nimcrypto < 1.0.0"
+    requires "https://github.com/cheatfate/nimcrypto >= 0.5.4 & < 1.0.0"
   else:
     requires "https://github.com/jangko/nimSHA2 < 1.0.0"
 else:
