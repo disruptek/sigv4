@@ -1,4 +1,4 @@
-version = "1.0.11"
+version = "1.0.12"
 author = "disruptek"
 description = "Amazon Web Services Signature Version 4"
 license = "MIT"
@@ -14,7 +14,7 @@ else:
   requires "https://github.com/jangko/nimSHA2 < 1.0.0"
 
 when not defined(release):
-  requires "https://github.com/disruptek/testes >= 0.7.8 & < 1.0.0"
+  requires "https://github.com/disruptek/testes >= 0.7.8 & < 2.0.0"
 
 task test, "run unit testes":
   when defined(windows):
