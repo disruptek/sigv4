@@ -1,6 +1,6 @@
 import std/json
 
-import testes
+import balls
 
 # use an include whatfer testing encodedSegment, etc.
 include sigv4
@@ -10,7 +10,7 @@ when defined(sigv4UseNimCrypto):
 else:
   checkpoint "testing with nimSHA2"
 
-testes:
+suite "aws sigv4":
   let
     url = "https://iam.amazonaws.com/?Action=ListUsers&Version=2010-05-08"
     secret = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY"

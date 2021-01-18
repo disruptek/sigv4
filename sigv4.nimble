@@ -1,4 +1,4 @@
-version = "1.0.12"
+version = "1.0.13"
 author = "disruptek"
 description = "Amazon Web Services Signature Version 4"
 license = "MIT"
@@ -14,11 +14,11 @@ else:
   requires "https://github.com/jangko/nimSHA2 < 1.0.0"
 
 when not defined(release):
-  requires "https://github.com/disruptek/testes >= 0.7.8 & < 2.0.0"
+  requires "https://github.com/disruptek/balls >= 2.0.0 & < 3.0.0"
 
 task test, "run unit testes":
   when defined(windows):
-    exec "testes.cmd"
+    exec "balls.cmd"
   else:
-    exec "testes"
-    exec "testes --define:sigv4UseNimCrypto"
+    exec "balls"
+    exec "balls --define:sigv4UseNimCrypto"
