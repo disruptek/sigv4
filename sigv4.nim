@@ -271,7 +271,7 @@ proc canonicalRequest*(meth: HttpMethod;
   result.add query.encodedQuery() & "\n"
   result.add heads.canonical & "\n"
   result.add heads.signed & "\n"
-  result.add hash(payload, digest)
+  result.add (if payload == "UNSIGNED-PAYLOAD": payload else: hash(payload, digest))
 
 template assertDateLooksValid(d: string; format: DateFormat) =
   when not defined(release):
