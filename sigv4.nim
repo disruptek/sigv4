@@ -345,3 +345,5 @@ proc calculateSignature*(secret: string; date: string; region: string;
     var key = deriveKey(SHA512Digest, secret, date, region, service)
     key.add tosign
     result = key.toLowerHex
+  of UnsignedPayload:
+    discard
