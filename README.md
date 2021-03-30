@@ -92,6 +92,47 @@ let
 assert signature == "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7"
 ```
 
+### Presigned S3 url
+```nim
+let
+  host      = "my-bucket.s3-eu-west-1.amazonaws.com"
+  url       = "https://" & host & "/2021/my-image.jpg"
+  region    = "eu-west-1"
+  service   = "s3"
+  
+  secretKey = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY"
+  accessKey = "AKIAQ0BPAG50Q8KFTR7F"
+  #token    = ""
+
+  payload   = ""
+  digest    = SHA256
+  expireSec = "60"
+  datetime  = "20210330T032054Z" #makeDateTime()
+  scope     = credentialScope(region=region, service=service, date=datetime)
+
+  query = %* {
+    "Action": "GetObject",
+    "X-Amz-Algorithm": $SHA256,
+    "X-Amz-Credential": accessKey & "/" & scope,
+    "X-Amz-Date": datetime,
+    "X-Amz-Expires": expireSec,
+    # "X-Amz-Security-Token": token,
+    "X-Amz-SignedHeaders": "host"
+  }
+  headers = newHttpHeaders(@[
+    ("Host", host)
+  ])
+
+  request   = canonicalRequest(HttpGet, url, query, headers, payload, digest=UnsignedPayload)
+  sts       = stringToSign(request.hash(digest), scope, date=datetime, digest=digest)
+  signature = calculateSignature(secret=secretKey, date=datetime, region=region,
+                                service=service, tosign=sts, digest=digest)
+
+  finalUrl  = url & "?" & request.split("\n")[2] & "&X-Amz-Signature=" & signature
+
+assert finalUrl == "https://my-bucket.s3-eu-west-1.amazonaws.com/2021/my-image.jpg?Action=GetObject&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAA0BPAG50Q8KFTR7F%2F20210330%2Feu-west-1%2Fs3%2Faws4_request&X-Amz-Date=20210330T032054Z&X-Amz-Expires=60&X-Amz-SignedHeaders=host&X-Amz-Signature=c240c603fb213c22283cda425a3e6bda3d142968ebb05a04b679767ab3936513"
+```
+
 ## Documentation
 See [the documentation for the sigv4 module](https://disruptek.github.io/sigv4/sigv4.html) as generated directly from the source.
 
