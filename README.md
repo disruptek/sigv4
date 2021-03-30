@@ -130,7 +130,7 @@ let
 
   finalUrl  = url & "?" & request.split("\n")[2] & "&X-Amz-Signature=" & signature
 
-assert finalUrl == "https://my-bucket.s3-eu-west-1.amazonaws.com/2021/my-image.jpg?Action=GetObject&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAA0BPAG50Q8KFTR7F%2F20210330%2Feu-west-1%2Fs3%2Faws4_request&X-Amz-Date=20210330T032054Z&X-Amz-Expires=60&X-Amz-SignedHeaders=host&X-Amz-Signature=c240c603fb213c22283cda425a3e6bda3d142968ebb05a04b679767ab3936513"
+assert finalUrl == "https://my-bucket.s3-eu-west-1.amazonaws.com/2021/my-image.jpg?Action=GetObject&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Credential=AKIAQ0BPAG50Q8KFTR7F%2F20210330%2Feu-west-1%2Fs3%2Faws4_request&X-Amz-Date=20210330T032054Z&X-Amz-Expires=60&X-Amz-SignedHeaders=host&X-Amz-Signature=e4506eac1665d53c658a3229118067a3f01bc00ee8ab3c8f9708b789ca5c9673"
 ```
 
 ## Documentation
