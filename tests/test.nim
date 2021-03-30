@@ -97,6 +97,8 @@ suite "aws sigv4":
     check pay.hash(SHA256) == e[$SHA256]
     check pay.hash(SHA512) == e[$SHA512]
     check "".hash(SHA256) == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    check pay.hash(UnsignedPayload) == "UNSIGNED-PAYLOAD"
+    check "".hash(UnsignedPayload) == "UNSIGNED-PAYLOAD"
 
     var
       mac = newHmac(SHA256Digest, "some key", "some data")
@@ -125,6 +127,22 @@ x-amz-date:20150830T123600Z
 
 content-type;host;x-amz-date
 """ & x
+    check canonical.hash(digest) == y
+    
+  test "canonical request unsigned payload":
+    let
+      h: HttpHeaders = newHttpHeaders(heads)
+      canonical = canonicalRequest(HttpGet, url, q, h, payload="", normal, digest=UnsignedPayload)
+      y = "2714b15fec5795e21b0fa0c48f6944f639224b42fd8e71d16f57ed58265f9c7d"
+    check canonical == """GET
+/
+Action=ListUsers&Version=2010-05-08
+content-type:application/x-www-form-urlencoded; charset=utf-8
+host:iam.amazonaws.com
+x-amz-date:20150830T123600Z
+
+content-type;host;x-amz-date
+UNSIGNED-PAYLOAD"""
     check canonical.hash(digest) == y
 
   test "credential scope":

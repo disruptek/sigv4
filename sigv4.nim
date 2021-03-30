@@ -97,6 +97,7 @@ type
   SigningAlgo* = enum
     SHA256 = "AWS4-HMAC-SHA256"
     SHA512 = "AWS4-HMAC-SHA512"
+    UnsignedPayload = "UNSIGNED-PAYLOAD"
   DigestTypes = MDigest256 or MDigest512
   EncodedHeaders* = tuple[signed: string; canonical: string]
   KeyValue = tuple[key: string; val: string]
@@ -252,6 +253,7 @@ proc hash*(payload: string; digest: SigningAlgo): string =
   case digest
   of SHA256: result = computeSHA256(payload).toLowerHex
   of SHA512: result = computeSHA512(payload).toLowerHex
+  of UnsignedPayload: result = $UnsignedPayload
 
 proc canonicalRequest*(meth: HttpMethod;
                       url: string;
@@ -343,3 +345,5 @@ proc calculateSignature*(secret: string; date: string; region: string;
     var key = deriveKey(SHA512Digest, secret, date, region, service)
     key.add tosign
     result = key.toLowerHex
+  of UnsignedPayload:
+    discard
