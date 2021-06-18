@@ -245,9 +245,6 @@ else:
   proc toLowerHex(digest: DigestTypes): string =
     result = toLowerAscii(digest.toHex)
 
-when defined(debug):
-  converter toString(digest: DigestTypes): string = digest.toLowerHex
-
 proc hash*(payload: string; digest: SigningAlgo): string =
   ## hash an arbitrary string using the given algorithm
   case digest
