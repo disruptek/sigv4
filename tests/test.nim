@@ -1,5 +1,3 @@
-import std/json
-
 import balls
 
 # use an include whatfer testing encodedSegment, etc.
@@ -128,7 +126,7 @@ x-amz-date:20150830T123600Z
 content-type;host;x-amz-date
 """ & x
     check canonical.hash(digest) == y
-    
+
   test "canonical request unsigned payload":
     let
       h: HttpHeaders = newHttpHeaders(heads)

@@ -20,16 +20,16 @@ when defined(sigv4UseNimCrypto):
     SHA256Digest = sha.sha256
     SHA512Digest = sha.sha512
 
-  func computeSHA256(s: string): MDigest256 = md.digest(SHA256Digest, s)
-  func computeSHA512(s: string): MDigest512 = md.digest(SHA512Digest, s)
+  proc computeSHA256(s: string): MDigest256 = md.digest(SHA256Digest, s)
+  proc computeSHA512(s: string): MDigest512 = md.digest(SHA512Digest, s)
 
-  func newHmac(H: typedesc; key: string; data: string): auto =
+  proc newHmac(H: typedesc; key: string; data: string): auto =
     result = hmac.hmac(H, key, data)
 
-  func add(key: var MDigest256; data: string) =
+  proc add(key: var MDigest256; data: string) =
     key = hmac.hmac(SHA256Digest, key.data, data)
 
-  func add(key: var MDigest512; data: string) =
+  proc add(key: var MDigest512; data: string) =
     key = hmac.hmac(SHA512Digest, key.data, data)
 
 else:
