@@ -149,7 +149,7 @@ proc encodedPath(path: string; style: PathNormal): string =
 
 proc encodedPath(uri: Uri; style: PathNormal): string =
   ## normalize and encode a URI's path
-  result = uri.path.encodedPath(style)
+  encodedPath(uri.path, style)
 
 proc encodedQuery(input: openArray[KeyValue]): string =
   ## encoded a series of key/value pairs as a query string
@@ -189,9 +189,9 @@ proc encodedQuery(node: JsonNode): string =
 
 proc normalizeUrl*(url: string; query: JsonNode; normalize: PathNormal = Default): Uri =
   ## reorder and encode path and query components of a url
-  result = url.parseUri
-  result.path = result.path.encodedPath(normalize)
-  result.query = query.encodedQuery
+  result = parseUri url
+  result.path = encodedPath(result.path, normalize)
+  result.query = encodedQuery query
   result.anchor = ""
 
 proc trimAll(s: string): string =
@@ -252,6 +252,19 @@ proc hash*(payload: string; digest: SigningAlgo): string =
   of SHA512: result = computeSHA512(payload).toLowerHex
   of UnsignedPayload: result = $UnsignedPayload
 
+proc canonicalRequest*(meth: HttpMethod; url: Uri; headers: HttpHeaders;
+                       payload: string; digest: SigningAlgo = SHA256): string =
+  ## produce the canonical request for signing purposes
+  let
+    httpmethod = $meth
+    heads = headers.encodedHeaders()
+  result = httpmethod.toUpperAscii & "\n"
+  result.add url.path & "\n"
+  result.add url.query & "\n"
+  result.add heads.canonical & "\n"
+  result.add heads.signed & "\n"
+  result.add hash(payload, digest)
+
 proc canonicalRequest*(meth: HttpMethod;
                       url: string;
                       query: JsonNode;
@@ -260,17 +273,11 @@ proc canonicalRequest*(meth: HttpMethod;
                       normalize: PathNormal = Default;
                       digest: SigningAlgo = SHA256): string =
   ## produce the canonical request for signing purposes
-  let
-    httpmethod = $meth
-    uri = url.parseUri
-    heads = headers.encodedHeaders()
-
-  result = httpmethod.toUpperAscii & "\n"
-  result.add uri.encodedPath(normalize) & "\n"
-  result.add query.encodedQuery() & "\n"
-  result.add heads.canonical & "\n"
-  result.add heads.signed & "\n"
-  result.add hash(payload, digest)
+  var
+    uri = parseUri url
+  uri.path = encodedPath(uri.path, normalize)
+  uri.query = encodedQuery query
+  result = canonicalRequest(meth, uri, headers, payload, digest)
 
 template assertDateLooksValid(d: string; format: DateFormat) =
   when not defined(release):

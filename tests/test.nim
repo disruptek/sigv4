@@ -61,8 +61,8 @@ suite "aws sigv4":
       cq = %* {
         "a": 1,
         "B": 2.0,
-        "c": newJNull(),
-        "d": newJBool(true),
+        "c": nil,
+        "d": true,
         "3 4": "5,🙄",
       }
     check cq["a"].toQueryValue == "1"
@@ -72,6 +72,14 @@ suite "aws sigv4":
     check cq["3 4"].toQueryValue == "5,🙄"
     check cq.encodedQuery == "3%204=5%2C%F0%9F%99%84&B=2.0&a=1&c=&d=true"
     check q.encodedQuery == "Action=ListUsers&Version=2010-05-08"
+
+  test "normalize url":
+    ## normal url
+    let def = $normalizeUrl("http://x.y//a:b/v//../#p", %* {"c": "d"})
+    check def == "http://x.y/a%253Ab/?c=d"
+    ## normal s3 url
+    let s3u = $normalizeUrl("http://x.y//a:b/v//../#p", %* {"c": "d"}, S3)
+    check s3u == "http://x.y//a%3Ab/v//../?c=d"
 
   test "encoded headers":
     var
