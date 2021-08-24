@@ -187,12 +187,16 @@ proc encodedQuery(node: JsonNode): string =
     query.add (key: q.key, val: q.val.toQueryValue)
   result = encodedQuery(query)
 
-proc normalizeUrl*(url: string; query: JsonNode; normalize: PathNormal = Default): Uri =
+proc normalizeUrl*(url: Uri; query: JsonNode; normalize: PathNormal = Default): Uri =
   ## reorder and encode path and query components of a url
-  result = parseUri url
+  result = url
   result.path = encodedPath(result.path, normalize)
   result.query = encodedQuery query
   result.anchor = ""
+
+proc normalizeUrl*(url: string; query: JsonNode; normalize: PathNormal = Default): Uri =
+  ## reorder and encode path and query components of a url
+  normalizeUrl(parseUri url, query, normalize = normalize)
 
 proc trimAll(s: string): string =
   ## remove surrounding whitespace and de-dupe internal spaces

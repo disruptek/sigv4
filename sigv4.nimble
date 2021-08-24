@@ -1,4 +1,4 @@
-version = "1.3.0"
+version = "1.4.0"
 author = "disruptek"
 description = "Amazon Web Services Signature Version 4"
 license = "MIT"
