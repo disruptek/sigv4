@@ -4,7 +4,6 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/disruptek/sigv4?style=flat)](https://github.com/disruptek/sigv4/releases/latest)
 ![Minimum supported Nim version](https://img.shields.io/badge/nim-1.0.8%2B-informational?style=flat&logo=nim)
 [![License](https://img.shields.io/github/license/disruptek/sigv4?style=flat)](#license)
-[![buy me a coffee](https://img.shields.io/badge/donate-buy%20me%20a%20coffee-orange.svg)](https://www.buymeacoffee.com/disruptek)
 
 Amazon Web Services Signature Version 4 request signing in Nim
 
@@ -92,14 +91,14 @@ let
 assert signature == "5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7"
 ```
 
-### Presigned S3 url
+### Pre-signed S3 Url
 ```nim
 let
   host      = "my-bucket.s3-eu-west-1.amazonaws.com"
   url       = "https://" & host & "/2021/my-image.jpg"
   region    = "eu-west-1"
   service   = "s3"
-  
+
   secretKey = "wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY"
   accessKey = "AKIAQ0BPAG50Q8KFTR7F"
   #token    = ""
