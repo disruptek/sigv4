@@ -1,0 +1,19 @@
+Default	sigv4.html#Default	PathNormal.Default	
+S3	sigv4.html#S3	PathNormal.S3	
+PathNormal	sigv4.html#PathNormal	sigv4: PathNormal	
+SHA256	sigv4.html#SHA256	SigningAlgo.SHA256	
+SHA512	sigv4.html#SHA512	SigningAlgo.SHA512	
+UnsignedPayload	sigv4.html#UnsignedPayload	SigningAlgo.UnsignedPayload	
+SigningAlgo	sigv4.html#SigningAlgo	sigv4: SigningAlgo	
+EncodedHeaders	sigv4.html#EncodedHeaders	sigv4: EncodedHeaders	
+normalizeUrl	sigv4.html#normalizeUrl,Uri,JsonNode,PathNormal	sigv4: normalizeUrl(url: Uri; query: JsonNode; normalize: PathNormal = Default): Uri	
+normalizeUrl	sigv4.html#normalizeUrl,string,JsonNode,PathNormal	sigv4: normalizeUrl(url: string; query: JsonNode; normalize: PathNormal = Default): Uri	
+signedHeaders	sigv4.html#signedHeaders,HttpHeaders	sigv4: signedHeaders(headers: HttpHeaders): string	
+hash	sigv4.html#hash,string,SigningAlgo	sigv4: hash(payload: string; digest: SigningAlgo): string	
+canonicalRequest	sigv4.html#canonicalRequest,HttpMethod,Uri,HttpHeaders,string,SigningAlgo	sigv4: canonicalRequest(meth: HttpMethod; url: Uri; headers: HttpHeaders;\n                 payload: string; digest: SigningAlgo = SHA256): string	
+canonicalRequest	sigv4.html#canonicalRequest,HttpMethod,string,JsonNode,HttpHeaders,string,PathNormal,SigningAlgo	sigv4: canonicalRequest(meth: HttpMethod; url: string; query: JsonNode;\n                 headers: HttpHeaders; payload: string;\n                 normalize: PathNormal = Default; digest: SigningAlgo = SHA256): string	
+makeDateTime	sigv4.html#makeDateTime,string	sigv4: makeDateTime(date: string = &quot;&quot;): string	
+makeDate	sigv4.html#makeDate,string	sigv4: makeDate(date: string = &quot;&quot;): string	
+credentialScope	sigv4.html#credentialScope,string,string,string	sigv4: credentialScope(region: string; service: string; date = &quot;&quot;): string	
+stringToSign	sigv4.html#stringToSign,string,string,string,SigningAlgo	sigv4: stringToSign(hash: string; scope: string; date = &quot;&quot;;\n             digest: SigningAlgo = SHA256): string	
+calculateSignature	sigv4.html#calculateSignature,string,string,string,string,string,SigningAlgo	sigv4: calculateSignature(secret: string; date: string; region: string;\n                   service: string; tosign: string; digest: SigningAlgo = SHA256): string	
