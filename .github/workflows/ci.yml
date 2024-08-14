@@ -10,6 +10,10 @@ on:
     branches:
       - '*'
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   changes:
     # Disable the filter on scheduled runs because we don't want to skip those
@@ -51,13 +55,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ['macos-latest', 'ubuntu-latest']
-        nim: ['devel', 'version-1-4', 'version-1-2', 'version-1-0']
+        os: ['ubuntu-latest']
+        nim: ['version-2-0']
     name: '${{ matrix.os }} (${{ matrix.nim }})'
     runs-on: ${{ matrix.os }}
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: project
+
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: project
 
@@ -68,17 +78,15 @@ jobs:
           version: ${{ matrix.nim }}
 
       - name: Run tests
-        shell: bash
         run: |
-          cd project
+          nimble --accept install "https://github.com/disruptek/balls"
           nimble --accept develop
-          nimble test
+          balls --path="." --backend:c
+          balls --path="." --define:sigv4UseNimCrypto --backend:c
 
       - name: Build docs
         if: ${{ matrix.docs }} == 'true'
-        shell: bash
         run: |
-          cd project
           branch=${{ github.ref }}
           branch=${branch##*/}
           nimble doc --project --outdir:docs \
