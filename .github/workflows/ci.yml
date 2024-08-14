@@ -10,6 +10,10 @@ on:
     branches:
       - '*'
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   changes:
     # Disable the filter on scheduled runs because we don't want to skip those
@@ -78,6 +82,7 @@ jobs:
           nimble --accept install "https://github.com/disruptek/balls"
           nimble --accept develop
           balls --path="."
+          balls --path="." --define:sigv4UseNimCrypto
 
       - name: Build docs
         if: ${{ matrix.docs }} == 'true'
