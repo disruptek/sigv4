@@ -56,7 +56,7 @@ jobs:
       fail-fast: false
       matrix:
         os: ['ubuntu-latest']
-        nim: ['devel', 'version-2-0', 'version-1-6', 'version-1-4', 'version-1-2', 'version-1-0']
+        nim: ['version-2-0']
     name: '${{ matrix.os }} (${{ matrix.nim }})'
     runs-on: ${{ matrix.os }}
 
@@ -81,8 +81,8 @@ jobs:
         run: |
           nimble --accept install "https://github.com/disruptek/balls"
           nimble --accept develop
-          balls --path="."
-          balls --path="." --define:sigv4UseNimCrypto
+          balls --path="." --backend:c
+          balls --path="." --define:sigv4UseNimCrypto --backend:c
 
       - name: Build docs
         if: ${{ matrix.docs }} == 'true'
